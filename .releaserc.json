@@ -57,11 +57,6 @@
             "type": "optional"
           }
         ],
-        "curseforge": {
-          "project_id": "1250626",
-          "java_versions": 21,
-          "environments": ["client", "server"]
-        },
         "modrinth": {
           "project_id": "uWsLN21d",
           "version_number": "${ nextRelease.version }+neoforge"
