@@ -47,9 +47,9 @@
     [
       "semantic-release-minecraft",
       {
-        "game_versions": "1.21.1",
+        "game_versions": ["1.21.9", "1.21.10"],
         "mod_loaders": "neoforge",
-        "display_name": "[NeoForge 1.21.1] ${ nextRelease.version }",
+        "display_name": "[NeoForge 1.21.10] ${ nextRelease.version }",
         "glob": "build/libs/explosiveenhancement-${ nextRelease.version }.jar",
         "dependencies": [
           {
@@ -57,11 +57,6 @@
             "type": "optional"
           }
         ],
-        "curseforge": {
-          "project_id": "1250626",
-          "java_versions": 21,
-          "environments": ["client", "server"]
-        },
         "modrinth": {
           "project_id": "uWsLN21d",
           "version_number": "${ nextRelease.version }+neoforge"

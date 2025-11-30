@@ -59,7 +59,7 @@ neoForge {
         }
 
         data {
-            data()
+            clientData()
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')
@@ -88,19 +88,11 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    implementation 'thedarkcolour:kotlinforforge-neoforge:5.10.0'
-
-    implementation("dev.isxander:yet-another-config-lib:${yacl_version}+${minecraft_version}-neoforge"){
+    implementation("dev.isxander:yet-another-config-lib:${yacl_version}+1.21.9-neoforge"){
         exclude group: "net.neoforged.fancymodloader", module: "loader"
-        exclude group: "thedarkcolour", module: "kotlinforforge-neoforge"
-        exclude group: "thedarkcolour", module: "kfflang-neoforge"
-        exclude group: "thedarkcolour", module: "kffmod-neoforge"
-        exclude group: "thedarkcolour", module: "kfflib-neoforge"
     }
 }
 
-// This block of code expands all declared replace properties in the specified resource targets.
-// A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [minecraft_version      : minecraft_version,
                              minecraft_version_range: minecraft_version_range,
@@ -112,7 +104,9 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
                              mod_license            : mod_license,
                              mod_version            : mod_version,
                              mod_authors            : mod_authors,
-                             mod_description        : mod_description]
+                             mod_description        : mod_description,
+                             yacl_version           : yacl_version,
+                             yacl_version_range     : yacl_version_range]
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"

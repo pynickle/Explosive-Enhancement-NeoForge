@@ -2,6 +2,8 @@ package com.euphony.explosive_enhancement.api;
 
 import com.euphony.explosive_enhancement.ExplosiveHandler;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -142,5 +144,42 @@ public interface ExplosiveApi {
     static void spawnParticles(Level world, double x, double y, double z, float power, boolean isUnderWater, boolean didDestroyBlocks, boolean isImportant) {
         ExplosionParticleType explosionParticleType = isUnderWater ? ExplosionParticleType.WATER : ExplosionParticleType.NORMAL;
         spawnParticles(world, x, y, z, power, explosionParticleType, didDestroyBlocks, isImportant);
+    }
+
+    /**
+     * <b>AS OF MINECRAFT 1.21.9, THE POWER IS BACK TO BEING SYNCED TO THE CLIENT!!!!</b><br>
+     * Weird hacks & workarounds are no longer needed going forward. Just use {@link ExplosionS2CPacket#radius()}!<br><br>
+     *
+     * Old docs:<br>
+     * Returns a power for the size of an explosion based on the user's config options. This is usually done by checking the particle to be an emitter or not an emitter particle, and returns a float from that check.
+     * <br><br>
+     * For example(default config settings), emitter particle = power/size of 4f, while non-emitter particle = power/size of 2f.
+     * <br><br>
+     * Minecraft 1.21.2 removed the power data(used to determine an explosion's scale) being sent to the client, meaning that it must either be assumed, preset, or calculated(if possible, most of the time it isn't).
+     *
+     * @param world The world of the explosion
+     * @param packet The Explosion packet(should contain the explosion's center, particle, sound, and the velocity value of the client player)
+     * @return The power/size that should be used for an Explosive Enhancement particle based on the user's config options.
+     *
+     * @since Explosive Enhancement 1.3.0
+     */
+    static float getPowerFromExplosionPacket(Level world, ClientboundExplodePacket packet) {
+        return ExplosiveHandler.getPowerFromExplosionPacket(world, packet);
+    }
+
+    /**
+     * Attempt to calculate the power from an entity's knockback from an explosion. Only works if there is actually some knockback. Not perfect, but close.
+     * <br> <br>
+     * Minecraft 1.21.2 removed the power data(used to determine an explosion's scale) being sent to the client, meaning that it must either be assumed, preset, or calculated(if possible, most of the time it isn't).
+     *
+     * @param world The world of the explosion and entity
+     * @param explosionPos The explosion's position
+     * @param entity The entity
+     * @param knockback The knockback given to the entity from the explosion
+     * @return The averaged power from the calculation using the x/y/z coordinates.
+     * @since Explosive Enhancement 1.3.0
+     */
+    static float getPowerFromKnockback(Level world, Vec3 explosionPos, LivingEntity entity, Vec3 knockback) {
+        return ExplosiveHandler.attemptDeterminePowerFromKnockback(world, explosionPos, entity, knockback);
     }
 }

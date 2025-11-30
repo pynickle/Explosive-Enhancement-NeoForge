@@ -4,27 +4,19 @@
 // TODO(Ravel): Failed to fully resolve file: null
 package com.euphony.explosive_enhancement.particles.normal;
 
+import com.euphony.explosive_enhancement.particles.AbstractExplosiveParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.util.RandomSource;
+import org.jetbrains.annotations.NotNull;
 
-import static com.euphony.explosive_enhancement.ExplosiveEnhancement.CONFIG;
-
-public class SparkParticle extends TextureSheetParticle {
-    private final SpriteSet spriteProvider;
-
-    SparkParticle(ClientLevel world, double x, double y, double z, double velX, double velY, double velZ, SpriteSet spriteProvider) {
-        super(world, x, y, z);
-        this.spriteProvider = spriteProvider;
+public class SparkParticle extends AbstractExplosiveParticle {
+    public SparkParticle(ClientLevel world, double x, double y, double z, double velX, double velY, double velZ, SparkParticleEffect params, SpriteSet spriteProvider) {
+        super(world, x, y, z, velX, velY, velZ, params.getScale(), params.isEmissive(), spriteProvider);
         this.lifetime = (int) (5 + Math.floor(velX / 5));
-        if (velX == 0) {
-            this.quadSize = CONFIG.sparkSize;
-        } else {
-            this.quadSize = (float) (CONFIG.sparkSize * (velX * 0.25f));
-        }
-        this.setParticleSpeed(0, 0, 0);
-        this.alpha = CONFIG.sparkOpacity;
-        this.setSpriteFromAge(spriteProvider);
+        this.alpha = params.getAlpha();
     }
 
     public void tick() {
@@ -40,19 +32,10 @@ public class SparkParticle extends TextureSheetParticle {
         }
     }
 
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    //Makes the particle emissive
-    @Override
-    protected int getLightColor(float tint) {
-        return CONFIG.emissiveExplosion ? 15728880 : super.getLightColor(tint);
-    }
-
-    public record Factory<T extends ParticleOptions>(SpriteSet sprites) implements ParticleProvider<T> {
-        public Particle createParticle(T type, ClientLevel world, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            return new SparkParticle(world, x, y, z, xSpeed, ySpeed, zSpeed, sprites);
+    public record Factory(SpriteSet sprites) implements ParticleProvider<SparkParticleEffect> {
+        @Override
+        public @NotNull Particle createParticle(SparkParticleEffect parameters, ClientLevel world, double x, double y, double z, double velocityX, double velocityY, double velocityZ, RandomSource random) {
+            return new SparkParticle(world, x, y, z, velocityX, velocityY, velocityZ, parameters, sprites);
         }
     }
 }

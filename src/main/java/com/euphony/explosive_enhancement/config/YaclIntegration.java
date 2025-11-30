@@ -1,21 +1,25 @@
 package com.euphony.explosive_enhancement.config;
 
 import com.euphony.explosive_enhancement.ExplosiveEnhancement;
-import dev.isxander.yacl3.api.*;
+import dev.isxander.yacl3.api.ConfigCategory;
+import dev.isxander.yacl3.api.LabelOption;
+import dev.isxander.yacl3.api.Option;
+import dev.isxander.yacl3.api.OptionDescription;
+import dev.isxander.yacl3.api.OptionGroup;
+import dev.isxander.yacl3.api.YetAnotherConfigLib;
 import dev.isxander.yacl3.gui.controllers.BooleanController;
 import dev.isxander.yacl3.gui.controllers.slider.DoubleSliderController;
 import dev.isxander.yacl3.gui.controllers.slider.FloatSliderController;
 import dev.isxander.yacl3.gui.controllers.slider.IntegerSliderController;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.ParticleStatus;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ParticleStatus;
 
 import java.util.Arrays;
 
 public class YaclIntegration {
-    //? if (>=1.19.4) {
     public static Screen makeScreen(Screen parent) {
         ExplosiveConfig config = ExplosiveEnhancement.CONFIG;
         ExplosiveConfig defaults = new ExplosiveConfig();
@@ -23,7 +27,7 @@ public class YaclIntegration {
                 .title(Component.literal("title"))
                 .save(config::save);
 
-        //Default Explosion category
+        // region Default Explosion Category
         var defaultCategoryBuilder = ConfigCategory.createBuilder()
                 .name(Component.translatable("explosiveenhancement.category.default"));
 
@@ -35,10 +39,9 @@ public class YaclIntegration {
                                 Minecraft.getInstance().options.particles().get().getCaption().copy().withStyle(ChatFormatting.BOLD),
                                 Component.translatable(ParticleStatus.ALL.getKey()).withStyle(ChatFormatting.BOLD)))
         ).build();
-
         defaultCategoryBuilder.optionIf(!Minecraft.getInstance().options.particles().get().equals(ParticleStatus.ALL), particlesNotice);
 
-        //Explosion particles group
+        // region Explosion Particles Group
         var explosionGroup = OptionGroup.createBuilder()
                 .name(Component.translatable("explosiveenhancement.explosion.group"))
                 .description(OptionDescription.createBuilder()
@@ -116,8 +119,8 @@ public class YaclIntegration {
                         () -> config.showSparks,
                         val -> config.showSparks = val
                 )
-                .listener((opt, val) -> sparkSize.setAvailable(val))
-                .listener((opt, val) -> sparkOpacity.setAvailable(val))
+                .addListener((option, event) -> sparkSize.setAvailable(option.pendingValue()))
+                .addListener((option, event) -> sparkOpacity.setAvailable(option.pendingValue()))
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
         var showDefaultExplosion = Option.<Boolean>createBuilder()
@@ -132,6 +135,18 @@ public class YaclIntegration {
                 )
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
+        var showDefaultSmoke = Option.<Boolean>createBuilder()
+                .name(Component.translatable("explosiveenhancement.default_smoke.enabled"))
+                .description(OptionDescription.createBuilder()
+                        .text(Component.translatable("explosiveenhancement.default_smoke.enabled.tooltip"))
+                        .build())
+                .binding(
+                        defaults.showDefaultSmoke,
+                        () -> config.showDefaultSmoke,
+                        val -> config.showDefaultSmoke = val
+                )
+                .customController(booleanOption -> new BooleanController(booleanOption, true))
+                .build();
         explosionGroup.option(showFireball);
         explosionGroup.option(showBlastWave);
         explosionGroup.option(showMushroomCloud);
@@ -139,8 +154,11 @@ public class YaclIntegration {
         explosionGroup.option(sparkSize);
         explosionGroup.option(sparkOpacity);
         explosionGroup.option(showDefaultExplosion);
+        explosionGroup.option(showDefaultSmoke);
         defaultCategoryBuilder.group(explosionGroup.build());
+        // endregion
 
+        // region Underwater Particles Group
         var underwaterGroup = OptionGroup.createBuilder()
                 .name(Component.translatable("explosiveenhancement.underwater.group"))
                 .description(OptionDescription.createBuilder()
@@ -232,8 +250,8 @@ public class YaclIntegration {
                         () -> config.showUnderwaterSparks,
                         val -> config.showUnderwaterSparks = val
                 )
-                .listener((opt, val) -> underwaterSparkSize.setAvailable(val))
-                .listener((opt, val) -> underwaterSparkOpacity.setAvailable(val))
+                .addListener((option, event) -> underwaterSparkSize.setAvailable(option.pendingValue()))
+                .addListener((option, event) -> underwaterSparkOpacity.setAvailable(option.pendingValue()))
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
         var showDefaultExplosionUnderwater = Option.<Boolean>createBuilder()
@@ -248,6 +266,19 @@ public class YaclIntegration {
                 )
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
+        var showDefaultSmokeUnderwater = Option.<Boolean>createBuilder()
+                .name(Component.translatable("explosiveenhancement.underwater.default_smoke"))
+                .description(OptionDescription.createBuilder()
+                        .text(Component.translatable("explosiveenhancement.underwater.default_smoke.tooltip"))
+                        .text(Component.translatable("explosiveenhancement.underwater.default_smoke.water_note"))
+                        .build())
+                .binding(
+                        defaults.showDefaultSmokeUnderwater,
+                        () -> config.showDefaultSmokeUnderwater,
+                        val -> config.showDefaultSmokeUnderwater = val
+                )
+                .customController(booleanOption -> new BooleanController(booleanOption, true))
+                .build();
 
         underwaterGroup.option(underwaterExplosions);
         underwaterGroup.option(showShockwave);
@@ -257,8 +288,12 @@ public class YaclIntegration {
         underwaterGroup.option(underwaterSparkSize);
         underwaterGroup.option(underwaterSparkOpacity);
         underwaterGroup.option(showDefaultExplosionUnderwater);
+        underwaterGroup.option(showDefaultSmokeUnderwater);
         defaultCategoryBuilder.group(underwaterGroup.build());
+        // endregion
+        // endregion
 
+        // region Sizing Category
         var dynamicCategoryBuilder = ConfigCategory.createBuilder()
                 .name(Component.translatable("explosiveenhancement.category.dynamic"));
 
@@ -293,50 +328,50 @@ public class YaclIntegration {
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
 
-        var bigExtraPower = Option.<Float>createBuilder()
-                .name(Component.translatable("explosiveenhancement.bigextrapower.enabled"))
-                .description(OptionDescription.createBuilder()
-                        .text(Component.translatable("explosiveenhancement.bigextrapower.enabled.tooltip"))
-                        .build())
-                .binding(
-                        defaults.bigExtraPower,
-                        () -> config.bigExtraPower,
-                        val -> config.bigExtraPower = val
-                )
-                .available(false)
-                .customController(floatOption -> new <Number>FloatSliderController(floatOption, -10F, 10F, 0.1F))
-                .build();
-
-        var smallExtraPower = Option.<Float>createBuilder()
-                .name(Component.translatable("explosiveenhancement.smallextrapower.enabled"))
-                .description(OptionDescription.createBuilder()
-                        .text(Component.translatable("explosiveenhancement.smallextrapower.enabled.tooltip"))
-                        .build())
-                .binding(
-                        defaults.smallExtraPower,
-                        () -> config.smallExtraPower,
-                        val -> config.smallExtraPower = val
-                )
-                .available(false)
-                .customController(floatOption -> new <Number>FloatSliderController(floatOption, -10F, 10F, 0.1F))
-                .build();
-
-        var extraPower = Option.<Boolean>createBuilder()
-                .name(Component.translatable("explosiveenhancement.extrapower.enabled"))
-                .description(OptionDescription.createBuilder()
-                        .text(Component.translatable("explosiveenhancement.extrapower.enabled.tooltip"))
-                        .build())
-                .binding(
-                        defaults.extraPower,
-                        () -> config.extraPower,
-                        val -> config.extraPower = val
-                )
-                .listener((option, value) -> {
-                    bigExtraPower.setAvailable(option.pendingValue());
-                    smallExtraPower.setAvailable(option.pendingValue());
-                })
-                .customController(booleanOption -> new BooleanController(booleanOption, true))
-                .build();
+//        var bigExtraPower = Option.<Float>createBuilder()
+//                .name(Component.translatable("explosiveenhancement.bigextrapower.enabled"))
+//                .description(OptionDescription.createBuilder()
+//                        .text(Component.translatable("explosiveenhancement.bigextrapower.enabled.tooltip"))
+//                        .build())
+//                .binding(
+//                        defaults.bigExtraPower,
+//                        () -> config.bigExtraPower,
+//                        val -> config.bigExtraPower = val
+//                )
+//                .available(false)
+//                .customController(floatOption -> new <Number>FloatSliderController(floatOption, -10F, 10F, 0.1F))
+//                .build();
+//
+//        var smallExtraPower = Option.<Float>createBuilder()
+//                .name(Component.translatable("explosiveenhancement.smallextrapower.enabled"))
+//                .description(OptionDescription.createBuilder()
+//                        .text(Component.translatable("explosiveenhancement.smallextrapower.enabled.tooltip"))
+//                        .build())
+//                .binding(
+//                        defaults.smallExtraPower,
+//                        () -> config.smallExtraPower,
+//                        val -> config.smallExtraPower = val
+//                )
+//                .available(false)
+//                .customController(floatOption -> new <Number>FloatSliderController(floatOption, -10F, 10F, 0.1F))
+//                .build();
+//
+//        var extraPower = Option.<Boolean>createBuilder()
+//                .name(Component.translatable("explosiveenhancement.extrapower.enabled"))
+//                .description(OptionDescription.createBuilder()
+//                        .text(Component.translatable("explosiveenhancement.extrapower.enabled.tooltip"))
+//                        .build())
+//                .binding(
+//                        defaults.extraPower,
+//                        () -> config.extraPower,
+//                        val -> config.extraPower = val
+//                )
+//                .addListener((option, event) -> {
+//                    bigExtraPower.setAvailable(option.pendingValue());
+//                    smallExtraPower.setAvailable(option.pendingValue());
+//                })
+//                .customController(booleanOption -> new BooleanController(booleanOption, true))
+//                .build();
 
         var smallExplosionYOffset = Option.<Double>createBuilder()
                 .name(Component.translatable("explosiveenhancement.yoffset"))
@@ -361,65 +396,60 @@ public class YaclIntegration {
                         () -> config.attemptBetterSmallExplosions,
                         val -> config.attemptBetterSmallExplosions = val
                 )
-                .listener((opt, val) -> smallExplosionYOffset.setAvailable(val))
+                .addListener((option, event) -> smallExplosionYOffset.setAvailable(option.pendingValue()))
                 .customController(booleanOption -> new BooleanController(booleanOption, true))
                 .build();
 
-        var sad121_2notice = LabelOption.createBuilder().lines(
-                Arrays.asList(
-                        Component.literal(""),
-                        Component.translatable("explosiveenhancement.121_2_sadness_message", Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled"))
-                )).build();
-
-        var bypassPowerForSingleplayer = Option.<Boolean>createBuilder()
-                .name(Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled"))
-                .description(OptionDescription.createBuilder()
-                        .text(
-                                Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled.tooltip")
-                        )
-                        .build())
-                .binding(
-                        defaults.bypassPowerForSingleplayer,
-                        () -> config.bypassPowerForSingleplayer,
-                        val -> config.bypassPowerForSingleplayer = val
-                )
-                .customController(booleanOption -> new BooleanController(booleanOption, true))
-                .build();
-
-        var attemptPowerKnockbackCalc = Option.<Boolean>createBuilder()
-                .name(Component.translatable("explosiveenhancement.knockbackcalc.enabled"))
-                .description(OptionDescription.createBuilder()
-                        .text(
-                                Component.translatable("explosiveenhancement.knockbackcalc.enabled.tooltip")
-                        )
-                        .build())
-                .binding(
-                        defaults.attemptPowerKnockbackCalc,
-                        () -> config.attemptPowerKnockbackCalc,
-                        val -> config.attemptPowerKnockbackCalc = val
-                )
-                .customController(booleanOption -> new BooleanController(booleanOption, true))
-                .build();
+//        var sad121_2notice = LabelOption.createBuilder().lines(
+//                Arrays.asList(
+//                        Component.literal(""),
+//                        Component.translatable("explosiveenhancement.121_2_sadness_message", Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled"))
+//                )).build();
+//
+//        var bypassPowerForSingleplayer = Option.<Boolean>createBuilder()
+//                .name(Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled"))
+//                .description(OptionDescription.createBuilder()
+//                        .text(
+//                                Component.translatable("explosiveenhancement.singleplayerpowerbypass.enabled.tooltip")
+//                        )
+//                        .build())
+//                .binding(
+//                        defaults.bypassPowerForSingleplayer,
+//                        () -> config.bypassPowerForSingleplayer,
+//                        val -> config.bypassPowerForSingleplayer = val
+//                )
+//                .customController(booleanOption -> new BooleanController(booleanOption, true))
+//                .build();
+//
+//        var attemptPowerKnockbackCalc = Option.<Boolean>createBuilder()
+//                .name(Component.translatable("explosiveenhancement.knockbackcalc.enabled"))
+//                .description(OptionDescription.createBuilder()
+//                        .text(
+//                                Component.translatable("explosiveenhancement.knockbackcalc.enabled.tooltip")
+//                        )
+//                        .build())
+//                .binding(
+//                        defaults.attemptPowerKnockbackCalc,
+//                        () -> config.attemptPowerKnockbackCalc,
+//                        val -> config.attemptPowerKnockbackCalc = val
+//                )
+//                .customController(booleanOption -> new BooleanController(booleanOption, true))
+//                .build();
 
         dynamicExplosionGroup.option(dynamicExplosions);
         dynamicExplosionGroup.option(dynamicUnderwater);
-        //taking the easy way out for now
-        //may figure out how to add this to older versions later
-        //? if (>=1.21.2) {
-        dynamicExplosionGroup.option(extraPower);
-        dynamicExplosionGroup.option(bigExtraPower);
-        dynamicExplosionGroup.option(smallExtraPower);
-        //?}
+//        dynamicExplosionGroup.option(extraPower);
+//        dynamicExplosionGroup.option(bigExtraPower);
+//        dynamicExplosionGroup.option(smallExtraPower);
         dynamicExplosionGroup.option(attemptBetterSmallExplosions);
         dynamicExplosionGroup.option(smallExplosionYOffset);
-        //? if (>=1.21.2) {
-        dynamicExplosionGroup.option(sad121_2notice);
-        dynamicExplosionGroup.option(bypassPowerForSingleplayer);
-        dynamicExplosionGroup.option(attemptPowerKnockbackCalc);
-        //?}
+//        dynamicExplosionGroup.option(sad121_2notice);
+//        dynamicExplosionGroup.option(bypassPowerForSingleplayer);
+//        dynamicExplosionGroup.option(attemptPowerKnockbackCalc);
         dynamicCategoryBuilder.group(dynamicExplosionGroup.build());
+        // endregion
 
-
+        // region Extras Category
         var extrasCategoryBuilder = ConfigCategory.createBuilder()
                 .name(Component.translatable("explosiveenhancement.category.extras"));
 
@@ -497,6 +527,7 @@ public class YaclIntegration {
         extrasGroup.option(alwaysShow);
         extrasGroup.option(debugLogs);
         extrasCategoryBuilder.group(extrasGroup.build());
+        // endregion
 
         yacl.category(defaultCategoryBuilder.build());
         yacl.category(dynamicCategoryBuilder.build());
@@ -504,5 +535,4 @@ public class YaclIntegration {
 
         return yacl.build().generateScreen(parent);
     }
-    //?}
 }

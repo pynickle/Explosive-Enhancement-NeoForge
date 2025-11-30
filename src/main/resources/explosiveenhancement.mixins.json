@@ -4,7 +4,7 @@
   "package": "com.euphony.explosive_enhancement.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ExplosionMixin"
+    "ClientPlayNetworkHandlerMixin"
   ],
   "client": [
   ],

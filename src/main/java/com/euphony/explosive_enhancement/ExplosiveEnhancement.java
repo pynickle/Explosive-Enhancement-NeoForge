@@ -1,6 +1,10 @@
 package com.euphony.explosive_enhancement;
 
 import com.euphony.explosive_enhancement.config.ExplosiveConfig;
+import com.euphony.explosive_enhancement.particles.normal.BlastWaveParticleType;
+import com.euphony.explosive_enhancement.particles.normal.FireballParticleType;
+import com.euphony.explosive_enhancement.particles.normal.SmokeParticleType;
+import com.euphony.explosive_enhancement.particles.normal.SparkParticleType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -9,7 +13,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
@@ -25,27 +28,18 @@ public class ExplosiveEnhancement {
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES =
             DeferredRegister.create(BuiltInRegistries.PARTICLE_TYPE, MODID);
 
-    public static final Supplier<SimpleParticleType> BLASTWAVE = registerParticle("blastwave");
-    public static final Supplier<SimpleParticleType> FIREBALL = registerParticle("fireball");
-    public static final Supplier<SimpleParticleType> BLANK_FIREBALL = registerParticle("blank_fireball");
-    public static final Supplier<SimpleParticleType> SMOKE = registerParticle("smoke");
-    public static final Supplier<SimpleParticleType> SPARKS = registerParticle("sparks");
-    public static final Supplier<SimpleParticleType> BUBBLE = registerParticle("bubble");
-    public static final Supplier<SimpleParticleType> SHOCKWAVE = registerParticle("shockwave");
-    public static final Supplier<SimpleParticleType> BLANK_SHOCKWAVE = registerParticle("blank_shockwave");
-    public static final Supplier<SimpleParticleType> UNDERWATERBLASTWAVE = registerParticle("underwaterblastwave");
-    public static final Supplier<SimpleParticleType> UNDERWATERSPARKS = registerParticle("underwatersparks");
+    public static final Supplier<BlastWaveParticleType> BLASTWAVE = PARTICLE_TYPES.register("blastwave", () -> new BlastWaveParticleType(false));
+    public static final Supplier<FireballParticleType> FIREBALL = PARTICLE_TYPES.register("fireball", () -> new FireballParticleType(false));
+    public static final Supplier<SparkParticleType> SPARKS = PARTICLE_TYPES.register("sparks", () -> new SparkParticleType(false));
+    public static final Supplier<SmokeParticleType> SMOKE = PARTICLE_TYPES.register("smoke", () -> new SmokeParticleType(false));
+
+    public static final Supplier<BlastWaveParticleType> WATER_BLASTWAVE = PARTICLE_TYPES.register("underwaterblastwave", () -> new BlastWaveParticleType(false));
+    public static final Supplier<FireballParticleType> SHOCKWAVE = PARTICLE_TYPES.register("shockwave", () -> new FireballParticleType(false));
+    public static final Supplier<SparkParticleType> WATER_SPARKS = PARTICLE_TYPES.register("underwatersparks", () -> new SparkParticleType(false));
+    public static final Supplier<SimpleParticleType> BUBBLE = PARTICLE_TYPES.register("bubble", () -> new SimpleParticleType(false));
 
     public ExplosiveEnhancement(IEventBus modEventBus, ModContainer modContainer) {
-        // NeoForge.EVENT_BUS.register(this);
         PARTICLE_TYPES.register(modEventBus);
-    }
-
-    public static DeferredHolder<ParticleType<?>, SimpleParticleType> registerParticle(String name) {
-        return PARTICLE_TYPES.register(
-                name,
-                () -> new SimpleParticleType(false)
-        );
     }
 
     private static ResourceLocation id(String path) {

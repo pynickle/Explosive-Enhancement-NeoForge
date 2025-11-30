@@ -1,43 +1,20 @@
 package com.euphony.explosive_enhancement.particles.normal;
 
+import com.euphony.explosive_enhancement.particles.AbstractExplosiveParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import org.jetbrains.annotations.NotNull;
 
-import static com.euphony.explosive_enhancement.ExplosiveEnhancement.CONFIG;
-
-public class SmokeParticle extends TextureSheetParticle {
-    private final SpriteSet spriteProvider;
-
-    SmokeParticle(ClientLevel world, double x, double y, double z, double velX, double velY, double velZ, SpriteSet spriteProvider) {
-        super(world, x, y, z);
-        this.setSpriteFromAge(spriteProvider);
-        this.friction = 0.6F;
-        this.spriteProvider = spriteProvider;
-        this.lifetime = this.random.nextInt(35) + 1;
-        //velX or velZ can be either the size/power or actual velocity in that respective direction
-        if (velZ == 0) {
-            //for the particles going straight up
-            quadSize = (float) velX * 0.25f;
-            this.lifetime += (int) (velX * this.random.nextIntBetweenInclusive(3, 22));
-            this.xd = 0;
-            this.zd = 0;
-        } else if (velX == 0.15 || velX == -0.15) {
-            //for the particles where velZ is used as the power variable
-            quadSize = (float) velZ * 0.25f;
-            this.lifetime += (int) (velZ * this.random.nextIntBetweenInclusive(3, 22));
-            this.xd = velX * (velZ * 0.5);
-            this.zd = 0;
-        } else if (velZ == 0.15 || velZ == -0.15) {
-            //for the particles where velX is used for the power variable
-            quadSize = (float) velX * 0.25f;
-            this.lifetime += (int) (velX * this.random.nextIntBetweenInclusive(3, 22));
-            this.xd = 0;
-            this.zd = velZ * (velX * 0.5);
-        }
-        this.yd = velY / 1.85;
-        this.gravity = 3.0E-6F;
+public class SmokeParticle extends AbstractExplosiveParticle {
+    public SmokeParticle(ClientLevel world, double x, double y, double z, double velX, double velY, double velZ, SmokeParticleEffect params, SpriteSet spriteProvider) {
+        super(world, x, y, z, velX, velY, velZ, params.getScale() * 0.25f, params.isEmissive(), spriteProvider);
+        this.lifetime = (int) (this.random.nextInt(35) + params.getScale() * this.random.nextIntBetweenInclusive(3, 22));
         this.hasPhysics = true;
     }
 
@@ -47,36 +24,37 @@ public class SmokeParticle extends TextureSheetParticle {
         this.zo = this.z;
         if (this.age++ >= this.lifetime) {
             this.remove();
-        } else {
-            this.setSpriteFromAge(this.spriteProvider);
-            if (this.age == 12) {
-                this.xd = 0;
-                this.yd = 0.05;
-                this.zd = 0;
-            }
-            this.move(this.xd, this.yd, this.zd);
+            return;
         }
+
+        if (this.age == 12) {
+            this.xd = 0;
+            this.yd = 0.05;
+            this.zd = 0;
+        }
+        this.move(this.xd, this.yd, this.zd);
+        this.setSpriteFromAge(this.spriteProvider);
     }
 
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    //Makes the particle emissive
     @Override
     protected int getLightColor(float tint) {
-        if (CONFIG.emissiveExplosion && this.age <= this.lifetime * 0.12) {
-            return 15728880;
-        } else if (CONFIG.emissiveExplosion && this.age <= this.lifetime * 0.17) {
-            return Mth.clamp(super.getLightColor(tint) + this.age + 30, super.getLightColor(tint), 15728880);
-        } else {
-            return super.getLightColor(tint);
+        BlockPos blockPos = BlockPos.containing(this.x, this.y, this.z);
+        int normalBrightness = this.level.isLoaded(blockPos) ? LevelRenderer.getLightColor(this.level, blockPos) : 0;
+        if (this.emissive) {
+            if (this.age <= this.lifetime * 0.12) {
+                return 15728880; // full emissive
+            } else if (this.age <= lifetime * 0.17) {
+                // fade out emissive based on age and max age
+                return Mth.clamp(normalBrightness + this.age + 30, normalBrightness, 15728880);
+            }
         }
+        return normalBrightness;
     }
 
-    public record Factory<T extends ParticleOptions>(SpriteSet sprites) implements ParticleProvider<T> {
-        public Particle createParticle(T type, ClientLevel world, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            return new SmokeParticle(world, x, y, z, xSpeed, ySpeed, zSpeed, sprites);
+    public record Factory(SpriteSet sprites) implements ParticleProvider<SmokeParticleEffect> {
+        @Override
+        public @NotNull Particle createParticle(SmokeParticleEffect parameters, ClientLevel world, double x, double y, double z, double velocityX, double velocityY, double velocityZ, RandomSource random) {
+            return new SmokeParticle(world, x, y, z, velocityX, velocityY, velocityZ, parameters, sprites);
         }
     }
 }

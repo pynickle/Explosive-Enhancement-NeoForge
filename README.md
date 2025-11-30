@@ -1,4 +1,4 @@
-# Explosive Enhancement
+# Explosive Enhancement (NeoForge)
 
 An unofficial NeoForge port of the original Explosive Enhancement mod, which enhances Minecraft explosions with stunning particle effects and customizable options.
 

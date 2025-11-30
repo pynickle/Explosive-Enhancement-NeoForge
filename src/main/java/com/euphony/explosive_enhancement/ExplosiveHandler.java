@@ -1,13 +1,19 @@
 package com.euphony.explosive_enhancement;
 
 import com.euphony.explosive_enhancement.api.ExplosionParticleType;
+import com.euphony.explosive_enhancement.particles.normal.BlastWaveParticleEffect;
+import com.euphony.explosive_enhancement.particles.normal.FireballParticleEffect;
+import com.euphony.explosive_enhancement.particles.normal.SmokeParticleEffect;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.ParticleStatus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.phys.Vec3;
 
 import static com.euphony.explosive_enhancement.ExplosiveEnhancement.CONFIG;
@@ -16,20 +22,19 @@ import static com.euphony.explosive_enhancement.ExplosiveEnhancement.LOGGER;
 public class ExplosiveHandler {
 
     public static void spawnParticles(Level world, double x, double y, double z, float power, ExplosionParticleType explosionParticleType, boolean didDestroyBlocks, boolean isImportant) {
-        if (CONFIG.modEnabled) {
+        if (!CONFIG.modEnabled) return;
 
-            logDebugInfo();
+        logDebugInfo();
 
-            switch (explosionParticleType) {
-                case NORMAL -> spawnExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant);
-                case WATER -> spawnUnderwaterExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant);
-                case WIND ->
-                        spawnWindExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant); //unused for now
-            }
+        switch (explosionParticleType) {
+            case NORMAL -> spawnExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant);
+            case WATER -> spawnUnderwaterExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant);
+            case WIND ->
+                    spawnWindExplosionParticles(world, x, y, z, power, didDestroyBlocks, isImportant); //unused for now
+        }
 
-            if (CONFIG.debugLogs) {
-                LOGGER.info("ExplosiveHandler finished!");
-            }
+        if (CONFIG.debugLogs) {
+            LOGGER.info("ExplosiveHandler finished!");
         }
     }
 
@@ -83,7 +88,6 @@ public class ExplosiveHandler {
      */
     public static boolean blockIsInWater(Level world, double x, double y, double z) {
         BlockPos pos = BlockPos.containing(x, y, z);
-        //?}
         return CONFIG.underwaterExplosions && world.getFluidState(pos).is(FluidTags.WATER);
     }
 
@@ -97,11 +101,7 @@ public class ExplosiveHandler {
      * @see ParticleTypes#GUST_EMITTER_LARGE
      */
     public static boolean particlesAreWindGust(ParticleOptions particle, ParticleOptions emitterParticle) {
-        //? if (>=1.21.0) {
         return particle == ParticleTypes.GUST_EMITTER_SMALL && emitterParticle == ParticleTypes.GUST_EMITTER_LARGE;
-        //?} else {
-        /*return false;
-         *///?}
     }
 
     public static boolean particlesAreEmitter(ParticleOptions particle) {
@@ -123,6 +123,30 @@ public class ExplosiveHandler {
             }
         }
         return power;
+    }
+
+    public static float getPowerFromExplosionPacket(Level world, ClientboundExplodePacket packet) {
+        return packet.radius();
+    }
+
+    public static float attemptDeterminePowerFromKnockback(Level world, Vec3 explosionPos, LivingEntity entity, Vec3 knockback) {
+        double e = entity.getX() - explosionPos.x();
+        double g = entity.getEyeY() - explosionPos.y();
+        double h = entity.getZ() - explosionPos.z();
+        double o = Math.sqrt(e * e + g * g + h * h);
+        if (o != 0.0) {
+            float dist = (float) Math.sqrt(entity.distanceToSqr(explosionPos));
+
+            float kbModifier = 1f;
+            float damageRecieved = ServerExplosion.getSeenPercent(explosionPos, entity);
+            float powerX = powerCalc((float) entity.getX(), (float) knockback.x(), (float) explosionPos.x(), dist, (float) o, kbModifier, damageRecieved);
+            float powerY = powerCalc((float) entity.getEyeY(), (float) knockback.y(), (float) explosionPos.y(), dist, (float) o, kbModifier, damageRecieved);
+            float powerZ = powerCalc((float) entity.getZ(), (float) knockback.z(), (float) explosionPos.z(), dist, (float) o, kbModifier, damageRecieved);
+
+            float avgPower = (powerX + powerY + powerZ) / 3f;
+            return avgPower;
+        }
+        return 0;
     }
 
     /**
@@ -153,20 +177,18 @@ public class ExplosiveHandler {
 
         float blastwavePower = power * 1.75f;
         float fireballPower = power * 1.25f;
-        float smokePower = power * 0.4f;
+        boolean emissive = CONFIG.emissiveExplosion;
 
         if (CONFIG.showBlastWave) {
-            addParticle(world, ExplosiveEnhancement.BLASTWAVE.get(), isImportant, x, y, z, blastwavePower, 0, 0);
+            addParticle(world, new BlastWaveParticleEffect(false, blastwavePower, emissive), isImportant, x, y + 0.5, z, 0, 0, 0);
         }
 
-        if (CONFIG.showFireball) {
-            addParticle(world, ExplosiveEnhancement.FIREBALL.get(), isImportant, x, y + 0.5, z, fireballPower, isImportant ? 1 : 0, 0);
-        } else if (CONFIG.showSparks) {
-            addParticle(world, ExplosiveEnhancement.BLANK_FIREBALL.get(), isImportant, x, y + 0.5, z, fireballPower, isImportant ? 1 : 0, 0);
+        if (CONFIG.showFireball || CONFIG.showSparks) {
+            addParticle(world, new FireballParticleEffect(false, fireballPower, emissive, CONFIG.showSparks, !CONFIG.showFireball, isImportant), isImportant, x, y + 0.5, z, 0, 0, 0);
         }
 
         if (CONFIG.showMushroomCloud) {
-            spawnMushroomCloud(world, x, y, z, power, smokePower, isImportant);
+            spawnMushroomCloud(world, x, y, z, power, isImportant);
         }
     }
 
@@ -177,34 +199,35 @@ public class ExplosiveHandler {
 
         float blastwavePower = power * 1.75f;
         float fireballPower = power * 1.25f;
+        boolean emissive = CONFIG.emissiveWaterExplosion;
 
         if (CONFIG.showUnderwaterBlastWave) {
-            addParticle(world, ExplosiveEnhancement.UNDERWATERBLASTWAVE.get(), isImportant, x, y + 0.5, z, blastwavePower, 0, 0);
+            addParticle(world, new BlastWaveParticleEffect(true, blastwavePower, emissive), isImportant, x, y + 0.5, z, 0, 0, 0);
         }
 
-        if (CONFIG.showShockwave) {
-            addParticle(world, ExplosiveEnhancement.SHOCKWAVE.get(), isImportant, x, y + 0.5, z, fireballPower, isImportant ? 1 : 0, 0);
-        } else if (CONFIG.showUnderwaterSparks) {
-            addParticle(world, ExplosiveEnhancement.BLANK_SHOCKWAVE.get(), isImportant, x, y + 0.5, z, fireballPower, isImportant ? 1 : 0, 0);
+        if (CONFIG.showShockwave || CONFIG.showUnderwaterSparks) {
+            addParticle(world, new FireballParticleEffect(true, fireballPower, emissive, CONFIG.showUnderwaterSparks, !CONFIG.showShockwave, isImportant), isImportant, x, y + 0.5, z, 0, 0, 0);
         }
 
-        spawnBubble(world, x, y, z, isImportant);
+        spawnBubbles(world, x, y, z, isImportant);
     }
 
-    private static void spawnMushroomCloud(Level world, double x, double y, double z, float power, double smokePower, boolean isImportant) {
-        //I'm aware DRY is a thing, but I couldn't figure out any other way to get even a similar effect that I was happy with, so unfortunately, this will have to do.
-        //x, y, z, [size(power)/velX], velY, [size(power)/velZ]
-        //This is to allow for dynamic smoke depending on the explosion's power
-        //The smoke particle factory (should be) able to determine if the velX/velZ is the size or actual velocity
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, power, power * 0.25, 0);
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, power, smokePower, 0);
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, 0.15, smokePower, power);
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, -0.15, smokePower, power);
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, power, smokePower, 0.15);
-        addParticle(world, ExplosiveEnhancement.SMOKE.get(), isImportant, x, y, z, power, smokePower, -0.15);
+    private static void spawnMushroomCloud(Level world, double x, double y, double z, float power, boolean isImportant) {
+        boolean emissive = CONFIG.emissiveExplosion;
+        float reducedPower = power * 0.4f;
+        float xzVel = 0.15f * power * 0.5f;
+        float velY = reducedPower / 1.85f;
+        // I'm aware DRY is a thing, but I couldn't figure out any other way to get even
+        // a similar effect that I was happy with, so unfortunately, this will have to do.
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, 0, (power * 0.25) / 1.85f, 0);
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, 0, velY, 0);
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, xzVel, velY, 0);
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, -xzVel, velY, 0);
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, 0, velY, xzVel);
+        addParticle(world, new SmokeParticleEffect(power, emissive), isImportant, x, y, z, 0, velY, -xzVel);
     }
 
-    private static void spawnBubble(Level world, double x, double y, double z, boolean isImportant) {
+    private static void spawnBubbles(Level world, double x, double y, double z, boolean isImportant) {
         for (int i = 0; i < CONFIG.bubbleAmount; i++) {
             double velX = world.random.nextIntBetweenInclusive(1, 7) * 0.3 * world.random.nextIntBetweenInclusive(-1, 1);
             double velY = world.random.nextIntBetweenInclusive(1, 10) * 0.1;
@@ -225,6 +248,6 @@ public class ExplosiveHandler {
     }
 
     private static void addParticle(Level world, ParticleOptions particle, boolean isImportant, double x, double y, double z, double velX, double velY, double velZ) {
-        world.addParticle(particle, isImportant, x, y, z, velX, velY, velZ);
+        world.addParticle(particle, isImportant, isImportant, x, y, z, velX, velY, velZ);
     }
 }

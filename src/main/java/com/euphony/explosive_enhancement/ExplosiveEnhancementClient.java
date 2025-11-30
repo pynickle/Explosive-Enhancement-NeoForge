@@ -15,7 +15,7 @@ public class ExplosiveEnhancementClient {
     public ExplosiveEnhancementClient(IEventBus modEventBus, ModContainer modContainer) {
         // Loads the config, GUI powered by YACL
         ExplosiveConfig.load();
-        if (FMLLoader.isProduction() && !YaclLoaded()) {
+        if (FMLLoader.getCurrent().isProduction() && !YaclLoaded()) {
             ExplosiveEnhancement.LOGGER.warn("[Explosive Enhancement]: YetAnotherConfigLib is not installed! If you wish to edit Explosive Enhancement's config, please install it!");
         }
 
@@ -26,25 +26,7 @@ public class ExplosiveEnhancementClient {
         }
     }
 
-    /*
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(ExplosiveEnhancement.BLASTWAVE.get(), BlastWaveParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.FIREBALL.get(), FireballParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.BLANK_FIREBALL.get(), FireballParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.SMOKE.get(), SmokeParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.SPARKS.get(), SparkParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.BUBBLE.get(), BubbleParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.SHOCKWAVE.get(), ShockwaveParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.BLANK_SHOCKWAVE.get(), ShockwaveParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.UNDERWATERBLASTWAVE.get(), UnderwaterBlastWaveParticle.Factory::new);
-        event.registerSpriteSet(ExplosiveEnhancement.UNDERWATERSPARKS.get(), UnderwaterSparkParticle.Factory::new);
-    }
-
-     */
-
     public static boolean YaclLoaded() {
-        return FMLLoader.getLoadingModList().getMods().stream().anyMatch(modInfo -> modInfo.getModId().equals("yet_another_config_lib_v3"));
+        return FMLLoader.getCurrent().getLoadingModList().getMods().stream().anyMatch(modInfo -> modInfo.getModId().equals("yet_another_config_lib_v3"));
     }
 }
