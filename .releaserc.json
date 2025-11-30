@@ -58,7 +58,7 @@
           }
         ],
         "modrinth": {
-          "project_id": "uWsLN21d",
+          "project_id": "EsWb3bhF",
           "version_number": "${ nextRelease.version }+neoforge"
         }
       }
