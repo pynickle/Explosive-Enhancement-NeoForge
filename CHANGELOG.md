@@ -1,3 +1,13 @@
+## [2.0.0](https://github.com/pynickle/Explosive-Enhancement-NeoForge/compare/v1.0.0...v2.0.0) (2025-12-25)
+
+### ⚠ BREAKING CHANGES
+
+* port to 1.21.11
+
+### ✨ Features
+
+* port to 1.21.11 (based on original 1.4.1-1.21.11) ([210d391](https://github.com/pynickle/Explosive-Enhancement-NeoForge/commit/210d391fb464a64d2361e5c7b03c13784a9a47b8))
+
 ## 1.0.0 (2025-11-30)
 
 ### ✨ Features
