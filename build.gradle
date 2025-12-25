@@ -12,11 +12,6 @@ repositories {
     mavenLocal()
 
     maven {
-        name = 'Kotlin for Forge'
-        url = 'https://thedarkcolour.github.io/KotlinForForge/'
-    }
-
-    maven {
         // YACL
         name 'Xander Maven'
         url 'https://maven.isxander.dev/releases'
