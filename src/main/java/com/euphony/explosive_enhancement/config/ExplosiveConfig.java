@@ -6,12 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.neoforged.fml.loading.FMLPaths;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,7 +64,7 @@ public class ExplosiveConfig {
     // https://github.com/enjarai/do-a-barrel-roll
     public static ExplosiveConfig load() {
         ExplosiveConfig config = null;
-        if(file.exists()) {
+        if (file.exists()) {
             try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
                 config = GSON.fromJson(fileReader, ExplosiveConfig.class);
             } catch (IOException e) {
@@ -78,7 +73,7 @@ public class ExplosiveConfig {
             }
         }
 
-        if(config == null) {
+        if (config == null) {
             config = new ExplosiveConfig();
         }
 

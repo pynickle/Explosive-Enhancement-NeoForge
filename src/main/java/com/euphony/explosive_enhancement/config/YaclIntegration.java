@@ -1,12 +1,7 @@
 package com.euphony.explosive_enhancement.config;
 
 import com.euphony.explosive_enhancement.ExplosiveEnhancement;
-import dev.isxander.yacl3.api.ConfigCategory;
-import dev.isxander.yacl3.api.LabelOption;
-import dev.isxander.yacl3.api.Option;
-import dev.isxander.yacl3.api.OptionDescription;
-import dev.isxander.yacl3.api.OptionGroup;
-import dev.isxander.yacl3.api.YetAnotherConfigLib;
+import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.gui.controllers.BooleanController;
 import dev.isxander.yacl3.gui.controllers.slider.DoubleSliderController;
 import dev.isxander.yacl3.gui.controllers.slider.FloatSliderController;
@@ -36,8 +31,8 @@ public class YaclIntegration {
                         Component.translatable("explosiveenhancement.particlenotice"),
                         Component.literal(""),
                         Component.translatable("explosiveenhancement.particlenoticeparttwoelectricboogaloo",
-                                Minecraft.getInstance().options.particles().get().getCaption().copy().withStyle(ChatFormatting.BOLD),
-                                Component.translatable(ParticleStatus.ALL.getKey()).withStyle(ChatFormatting.BOLD)))
+                                Minecraft.getInstance().options.particles().get().caption().copy().withStyle(ChatFormatting.BOLD),
+                                Component.literal(ParticleStatus.ALL.name()).copy().withStyle(ChatFormatting.BOLD)))
         ).build();
         defaultCategoryBuilder.optionIf(!Minecraft.getInstance().options.particles().get().equals(ParticleStatus.ALL), particlesNotice);
 

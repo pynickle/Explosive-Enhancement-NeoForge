@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.120'
+    id 'net.neoforged.moddev' version '2.0.134'
 }
 
 version = mod_version
@@ -31,7 +31,11 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 neoForge {
     // Specify the version of NeoForge to use.
-    version = project.neo_version
+    enable {
+        version = project.neo_version
+        // Disable recompilation if the "CI" environment variable is set to true. It is automatically set by GitHub Actions.
+        disableRecompilation = System.getenv("CI") == "true"
+    }
 
     parchment {
         mappingsVersion = project.parchment_mappings_version
@@ -88,7 +92,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    implementation("dev.isxander:yet-another-config-lib:${yacl_version}+1.21.9-neoforge"){
+    implementation("dev.isxander:yet-another-config-lib:${yacl_version}+1.21.11-neoforge"){
         exclude group: "net.neoforged.fancymodloader", module: "loader"
     }
 }
